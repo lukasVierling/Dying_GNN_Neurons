@@ -1,0 +1,27 @@
+training_params:
+  #architecture
+  model: "GCNConv"          
+  activation: "relu"
+  n_layers: 3
+  hid_dim: 32
+
+  #training setup
+  lr: 0.005
+  epochs: 100
+  weight_decay: 0.0005
+
+data_params:
+  root: "./"
+  name: 'Cora'
+  split: "public"
+  transform: torch_geometric.transforms.GCNNorm()
+
+prune_params:
+  dead_treshold : 1
+  prune: True                           
+  reinit: "zero"           
+  prune_every_n : 1
+  prune_warmup : 0
+
+
+  

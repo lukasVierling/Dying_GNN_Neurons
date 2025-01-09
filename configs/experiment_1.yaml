@@ -1,0 +1,30 @@
+training_params:
+  #architecture
+  model: "GCNConv"          
+  activation: "relu"
+  n_layers: 3
+  hid_dim: 32
+
+  #training setup
+  lr: 0.005
+  epochs: 100
+  weight_decay: 0.0005
+
+data_params:
+  root: "./"
+  name: 'Cora'
+  split: "public"
+  transform: torch_geometric.transforms.GCNNorm()
+
+prune_params:
+  dead_treshold : 1
+  prune: True                           
+  reinit: "zero"           
+  prune_every_n : 1
+  prune_warmup : 0
+
+experiment_params:
+  layers: [0,1,2] #[0,5,10,15,20,25,30]
+  runs: 2 #10
+  results_path: "results/experiment_1"
+  id: "experiment_1" #unique id manually chose (str)

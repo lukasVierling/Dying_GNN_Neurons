@@ -25,6 +25,6 @@ prune_params:
 
 experiment_params:
   layers: 128
-  runs: 1
+  runs: 3
   results_path: "results/experiment_2"
   id: "experiment_2" #unique id manually chose (str)

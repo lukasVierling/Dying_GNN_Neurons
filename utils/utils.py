@@ -44,7 +44,6 @@ def update_dict(dict, dead_neurons_tracker, val_accuracies, train_accuracies, te
     return dict
 
 def init_stats_dict(epochs):
-
     return {
         "dead_neurons": [0]*epochs, 
         "val_accuracies": [0]*epochs,   
@@ -54,7 +53,6 @@ def init_stats_dict(epochs):
     }
 
 def save_best_models(models_dict, results_path, model_str, experiment_id):
-
     for n_layers, best_models in models_dict.items():
 
         for idx, model in enumerate(best_models):

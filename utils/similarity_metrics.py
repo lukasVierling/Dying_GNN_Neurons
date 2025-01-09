@@ -22,26 +22,38 @@ import matplotlib.cm as cm
 from torch import linalg
 
 
-def distance_to_mean(graph, node_features_dict):
-  distances_dict = {}
-  for layer, node_features in node_features_dict.items():
-    node_features = node_features.cpu()
-    mean_features = torch.mean(node_features, dim=0)
-    mean_features = (mean_features.unsqueeze(0)).expand(node_features.shape)
-    #print(mean_features.shape)
-    distance_to_mean = torch.linalg.norm(node_features - mean_features, dim=(0,1))
-    #print(distance_to_mean.shape)
-    distances_dict[layer] = distance_to_mean.item()
-  return distances_dict
+def distance_to_mean( node_features_dict):
+    """Calcualte the distance to mean metric over node embeddings
+
+    Parameters
+    ----------
+    node_features: node feature during forward pass, should be layers x nodes x hid_dim
+
+    Returns
+    ----------
+    distance_dict : dictionary with similarity metric for every layer
+    """
+    distances_dict = {}
+    for layer, node_features in node_features_dict.items():
+        node_features = node_features.cpu()
+        mean_features = torch.mean(node_features, dim=0)
+        mean_features = (mean_features.unsqueeze(0)).expand(node_features.shape)
+        distance_to_mean = torch.linalg.norm(node_features - mean_features, dim=(0,1))
+        distances_dict[layer] = distance_to_mean.item()
+    return distances_dict
 
 
 def dirichlet_energy(graph, node_features):
-    """
-    Calculate the Dirichlet energy over all nodes, based on the given node features.
+    """Calcualte the dirichlet energy over a graph, given the node features for every layer
 
-    :param graph: The dataset graph, which includes edge_index (sparse adjacency matrix).
-    :param node_features: The feature matrix for all nodes (size num_nodes x feature_dim).
-    :return: Dirichlet energy value for the entire dataset.
+    Parameters
+    ----------
+    gaph: the dataset
+    node_features: node feature during forward pass, should be layers x nodes x hid_dim
+
+    Returns
+    ----------
+    energy : dictionary with similarity metric for every layer
     """
     layerwise_energy = {}
     for layer, activations in node_features.items():
@@ -50,10 +62,6 @@ def dirichlet_energy(graph, node_features):
       num_nodes = activations.shape[0]  # num nodes = N
 
       energy = 0
-
-      # Loop through edges and compute squared differences between node features
-      #print(energy)
-      #print(f"doing {len(list((zip(edge_index[0], edge_index[1]))))} iterations")
       for i, j in zip(edge_index[0], edge_index[1]):
           # Compute the squared difference of the node features for this edge
           diff = activations[i] - activations[j]
@@ -73,13 +81,24 @@ def evaluate_similarity(
     metric="distance",
     random = True,
 ):
+    """Calcualte the similarity for each layer, given a metric
+
+    Parameters
+    ----------
+    model: the model we want to calc the similarity score for
+    data: dataset for the forward
+    metric: "distance" or "dirichlet", to decide which metric to use
+    random: True or False, uses the original node features or random initialized node features
+
+    Returns
+    ----------
+    result: is the evaluation of the metric over each layer
+    """
     #data
     X = data.x
     Y = data.y
     A = data.edge_index
     graph = data
-    #out = model(X,A)
-    #calc the energy
     if random:
         #compare to random input features
         data = torch.randn_like(X)
@@ -87,13 +106,11 @@ def evaluate_similarity(
         data = X
     activations = model.generate_node_embeddings(data,A)
     activations = {i: act.clone().detach().cpu() for i,act in enumerate(activations)}
-    #print(activations)
     if metric=="dirichlet":
-        energy = dirichlet_energy(graph,activations)
+        result = dirichlet_energy(graph,activations)
     elif metric=="distance":
-        energy = distance_to_mean(graph,activations)
+        result = distance_to_mean(activations)
     else:
         print("undefined metric!")
-        energy = {}
-    #plot_dirichlet_energy(energy)
-    return energy
+        result = {}
+    return result

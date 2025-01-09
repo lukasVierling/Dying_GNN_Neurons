@@ -46,10 +46,7 @@ class GCN(nn.Module):
     self.layers = nn.ModuleList(layers)
 
 
-    ## ------ End Solution ------ ##
-
   def forward(self, X, A) -> torch.Tensor:
-    ## ------ Begin Solution ------ ##
     for layer in self.layers:
 
       if not isinstance(layer, nn.Linear):
@@ -59,10 +56,8 @@ class GCN(nn.Module):
       else:
         X = layer(X)
     return X
-    ## ------ End Solution ------ ##
 
   def generate_node_embeddings(self, X, A) -> torch.Tensor:
-    ## ------ Begin Solution ------ ##
     embeddings = []
     #skip the forward through the linear layer so no logits
     for layer in self.layers[:-1]:
@@ -76,14 +71,14 @@ class GCN(nn.Module):
         X = layer(X)
         embeddings.append(X)
     return embeddings
-    ## ------ End Solution ------ ##
+  
   def param_init(self):
     """
     Initialize the parameters of the model to prevent dying neurons.
     """
     for layer in self.layers:
         if isinstance(layer, nn.Linear):
-            # He initialization for Linear layers
+            # use he init for the linear leayer 
             nn.init.kaiming_uniform_(layer.weight, mode='fan_in', nonlinearity='relu')
             if layer.bias is not None:
                 nn.init.zeros_(layer.bias)

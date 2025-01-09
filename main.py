@@ -98,7 +98,7 @@ def main():
                 relu_stats = update_dict(relu_stats, dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons)  
                 relu_models.append(best_model)
 
-            # Train ReLU <runs> times and collect results
+            # Train relu + prune <runs> times and collect results
             # With pruning
             training_params["activation"] = "relu"
             prune_params["prune"] = True

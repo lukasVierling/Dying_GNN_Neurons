@@ -51,7 +51,7 @@ You can change the experiment and model parameters within the config. You can al
 
 ## Results
 
-You can find the results of the experiments in the results folder. Metrics are saved in JSON format. Checkpoints are saved as .pt files.
+You can find the results of the experiments in the results folder. Metrics are saved in JSON format. Checkpoints are saved as .pth files.
 
 ## Contributing
 

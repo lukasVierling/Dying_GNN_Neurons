@@ -1,3 +1,5 @@
 /Cora
 *.pt
 *.pth
+.DS_Store
+__pycache__/

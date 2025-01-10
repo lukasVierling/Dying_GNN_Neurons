@@ -24,7 +24,7 @@ prune_params:
   prune_warmup : 0
 
 experiment_params:
-  layers: [0,5,10,15,20] #[0,5,10,15,20,25,30]
-  runs: 5 #10
+  layers: [0,5,10,15,20,25,30]
+  runs: 10
   results_path: "results/experiment_1"
   id: "experiment_1" #unique id manually chose (str)

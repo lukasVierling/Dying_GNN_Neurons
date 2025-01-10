@@ -51,7 +51,6 @@ def train(
     test_dead_neurons_averaged : dead neurons in the whole model for best model during forward on test data
     best_model : the model with the highest val accuracy 
     """
-
     # set device
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -141,11 +140,11 @@ def train(
 
     # evaluate on the testset
     model.eval()
-    test_acc, test_dead_neurons = monitor(
-        model, data, test_mask, dead_threshold, prune=False
+    test_acc, test_dead_neurons, test_0_output = monitor(
+        model, data, test_mask, dead_threshold, prune=False, report_0_output=True
     )
     test_dead_neurons_averaged = np.mean(np.array(test_dead_neurons))
     model.train()
 
     # return all metrics and the best model
-    return dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons_averaged, best_model
+    return dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons_averaged, test_0_output, best_model

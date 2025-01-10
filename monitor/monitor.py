@@ -27,6 +27,7 @@ def monitor(
     k=10,
     reinit="0",
     prune_all=False,
+    report_0_output=False,
 ):
     """Monitors the behaviour of the model.
     Evaluates the model on the val set and returns the accuracy.
@@ -44,6 +45,13 @@ def monitor(
         k: k/100 = percentage of weights pruned
         reinit: strategy to initialize the pruned weights
         prune_all: prune k/100% of weights wehn turned on, k/100% of negative weights otherwise
+    report_0_output: true if we return overall 0 activations from relu
+    
+    Returns
+    ----------
+    acc: accuracy on data
+    dead_neurons: fraction of dead neurons per layer
+    zero_output: overall share of 0 outputs during forward
     """
     # Dictionary to store activations
     activations = {}
@@ -76,6 +84,7 @@ def monitor(
     acc = torch.mean(correct.float()).item()
     #start pruning when pruning is set to true
     dead_neurons = []
+    zero_output = np.mean([ np.mean((np.array(outputs) == 0)) for outputs in activations.values()])
     #print("Activations: ",activations)
     for name, outputs in activations.items():
         dead_fraction = np.mean(
@@ -136,4 +145,7 @@ def monitor(
                 else:
                     print(f"The layer {name} does not have a `lin` submodule with weights.")
 
-    return acc, dead_neurons
+    if report_0_output:
+        return acc,dead_neurons,zero_output
+    else:
+        return acc, dead_neurons

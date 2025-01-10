@@ -92,30 +92,31 @@ def main():
             training_params["activation"] = "relu"
             prune_params["prune"] = False
             for i in range(runs):
-                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, best_model = train(dataset, training_params, *prune_params.values())
+                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output, best_model = train(dataset, training_params, *prune_params.values())
                 # Store the values
                 # Dead neurons should be a list of length Epochs x L, so we take mean over all layers for every epcoh
-                relu_stats = update_dict(relu_stats, dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons)  
+                relu_stats = update_dict(relu_stats, dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output)  
                 relu_models.append(best_model)
-
+            print("Done with ReLU")
             # Train relu + prune <runs> times and collect results
             # With pruning
             training_params["activation"] = "relu"
             prune_params["prune"] = True
             for i in range(runs):
-                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, best_model = train(dataset, training_params, *prune_params.values())
+                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output, best_model = train(dataset, training_params, *prune_params.values())
                 # Store the values
-                relu_pruning_stats = update_dict(relu_pruning_stats,dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons)
+                relu_pruning_stats = update_dict(relu_pruning_stats,dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output)
                 relu_pruning_models.append(best_model)
-
+            print("Done with ReLU + Pruning")
             # Train Leaky ReLU <runs> times and collect results
             training_params["activation"] = "leakyrelu"
             prune_params["prune"] = False
             for i in range(runs):
-                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, best_model = train(dataset, training_params, *prune_params.values())
+                dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output, best_model = train(dataset, training_params, *prune_params.values())
                 # Store the values
-                leaky_relu_stats = update_dict(leaky_relu_stats,dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons)
+                leaky_relu_stats = update_dict(leaky_relu_stats,dead_neurons_tracker, val_accuracies, train_accuracies, test_acc, test_dead_neurons, test_0_output)
                 leaky_relu_models.append(best_model)
+            print("Done with LeakyReLU")
             #Now we want to compute the statistics
             #Comppute averages
             relu_stats = average_dict(relu_stats,runs)
@@ -131,8 +132,12 @@ def main():
         #start plotting the test dead neurons
         relu_dead_neurons = [relu_stats_layer[i]["test_dead_neurons"] for i in layers]
         relu_pruning_dead_neurons = [relu_pruning_stats_layer[i]["test_dead_neurons"] for i in layers]
+        relu_0_output = [relu_stats_layer[i]["test_0_output"] for i in layers]
+        relu_pruning_0_output = [relu_pruning_stats_layer[i]["test_0_output"] for i in layers]
         plt.plot(layers,relu_dead_neurons, color=RELU_COLOR)
         plt.plot(layers, relu_pruning_dead_neurons, color=PRUNING_COLOR)
+        plt.plot(layers,relu_0_output, color=RELU_COLOR, linestyle="--")
+        plt.plot(layers, relu_pruning_0_output, color=PRUNING_COLOR,linestyle="--")
         plt.xlabel("N Layers")
         plt.ylabel("Fraction Dead Neurons")
         plt.savefig(os.path.join(results_path,f"dead_neurons_{experiment_id}.png"), dpi=300)
@@ -161,6 +166,7 @@ def main():
         with open(os.path.join(results_path,"leaky_relu_stats_layer.json"), "w") as f:
             json.dump(leaky_relu_stats_layer, f)
 
+        #Temp to save compute
         save_best_models(relu_models_layers,results_path, training_params["activation"]+"_"+training_params["model"]+"_"+str(prune_params["prune"]) ,experiment_id)
         save_best_models(relu_pruning_models_layers,results_path, training_params["activation"]+"_"+training_params["model"]+"_"+str(prune_params["prune"]) ,experiment_id)
         save_best_models(leaky_relu_models_layers,results_path, training_params["activation"]+"_"+training_params["model"]+"_"+str(prune_params["prune"]) ,experiment_id)
@@ -191,7 +197,7 @@ def main():
         training_params["activation"] = "relu"
         prune_params["prune"] = False
         for i in range(runs):
-            _, _, _, _, _, best_model = train(dataset, training_params, *prune_params.values())
+            _, _, _, _, _, _, best_model = train(dataset, training_params, *prune_params.values())
             dirichlet = evaluate_similarity(best_model, dataset, "dirichlet", random=False)
             distance = evaluate_similarity(best_model, dataset, "distance", random=False)
             relu_similarities["dirichlet"] = [prev_sim + sim for prev_sim,sim in zip(dirichlet.values(),relu_similarities["dirichlet"])]
@@ -199,14 +205,14 @@ def main():
         #average
         relu_similarities["dirichlet"] = [sim/runs for sim in relu_similarities["dirichlet"]]
         relu_similarities["distance"] = [sim/runs for sim in relu_similarities["distance"]]
-        
+        print("Done with ReLU")
 
         # Train ReLU <runs> times and collect results
         # With pruning
         training_params["activation"] = "relu"
         prune_params["prune"] = True
         for i in range(runs):
-            _, _, _, _, _, best_model = train(dataset, training_params, *prune_params.values())
+            _, _, _, _, _,_, best_model = train(dataset, training_params, *prune_params.values())
             dirichlet = evaluate_similarity(best_model, dataset, "dirichlet", random=False)
             distance = evaluate_similarity(best_model, dataset, "distance", random=False)
             relu_pruning_similarities["dirichlet"] = [prev_sim + sim for prev_sim,sim in zip(dirichlet.values(),relu_pruning_similarities["dirichlet"])]
@@ -214,12 +220,13 @@ def main():
             # Store the values
         relu_pruning_similarities["dirichlet"] = [sim/runs for sim in relu_pruning_similarities["dirichlet"]]
         relu_pruning_similarities["distance"] = [sim/runs for sim in relu_pruning_similarities["distance"]]
+        print("Done with ReLU+Pruning")
 
         # Train Leaky ReLU <runs> times and collect results
         training_params["activation"] = "leakyrelu"
         prune_params["prune"] = False
         for i in range(runs):
-            _, _, _, _, _, best_model = train(dataset, training_params, *prune_params.values())
+            _, _, _, _, _,_, best_model = train(dataset, training_params, *prune_params.values())
             dirichlet = evaluate_similarity(best_model, dataset, "dirichlet", random=False)
             distance = evaluate_similarity(best_model, dataset, "distance", random=False)
             leaky_relu_similarities["dirichlet"] = [prev_sim + sim for prev_sim,sim in zip(dirichlet.values(),leaky_relu_similarities["dirichlet"])]
@@ -227,6 +234,7 @@ def main():
             # Store the values
         leaky_relu_similarities["dirichlet"] = [sim/runs for sim in leaky_relu_similarities["dirichlet"]]
         leaky_relu_similarities["distance"] = [sim/runs for sim in leaky_relu_similarities["distance"]]
+        print("Done with LeakyReLU")
         #plot the similarities over layers
         print(relu_similarities)
         plt.plot(relu_similarities["dirichlet"],label="ReLU Dirichlet", color=RELU_COLOR)

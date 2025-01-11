@@ -20,7 +20,7 @@ can mitigate over-smoothing, indicating a direct connection between these two ph
 To install requirements:
 
 ```setup
-pip install -r requirements.txt
+pip install -r requirements_pip.txt
 ```
 
 ## Training

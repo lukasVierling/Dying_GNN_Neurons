@@ -92,50 +92,48 @@ def monitor(
         )
         dead_neurons.append(np.array(dead_fraction))
 
-        # Identify dead neurons
+        #identify dead neurons
         is_dead = np.mean((np.array(outputs) == 0), axis=0) >= dead_threshold
 
         if prune:
-            if name in dict(model.named_modules()).keys():  # Ensure layer exists in the model
-                layer = dict(model.named_modules())[name]  # Access the layer
-                if isinstance(layer, GCNConv):  # Ensure it's the correct type of layer
+            if name in dict(model.named_modules()).keys():
+                layer = dict(model.named_modules())[name]
+                if isinstance(layer, GCNConv):  #ensure it's the correct type of layer
                     if hasattr(layer, 'lin') and hasattr(layer.lin, 'weight'):  # Check for 'lin' module
                         with torch.no_grad():
                             weight = layer.lin.weight.clone().detach().cpu().numpy()  # Actually not creating a copy!
-                            std = np.sqrt(np.var(weight))  # Calculate standard deviation of the weights
+                            std = np.sqrt(np.var(weight))  #calculate standard deviation of the weights
                             num_inputs = weight.shape[1]
 
-                            # Loop through each neuron and adjust weights for dead ones
+                            #loop through each neuron and adjust weights for dead ones
                             for idx, dead in enumerate(is_dead):
                                 if dead:
-                                    # Step 1: If prune_all is True, prune the most negative weights from all weights.
+                                    #if prune_all is True, prune the most negative weights from all weights
                                     if prune_all:
                                         num_weights_to_adjust = max(1, int(k / 100 * weight.shape[1]))  # Adjust this depending on your criterion
                                         most_negative_indices = np.argsort(weight[idx])[:num_weights_to_adjust]
                                     else:
-                                        # Step 2: Sort the indices of negative weights by their values (most negative first)
-                                        negative_weight_indices = np.where(weight[idx] < 0)[0]  # Get indices of negative weights
+                                        #sort the indices of negative weights by their values (most negative first)
+                                        negative_weight_indices = np.where(weight[idx] < 0)[0]
 
-                                        # Ensure there are negative weights before proceeding
+                                        # ensure there are negative weights before proceeding
                                         if len(negative_weight_indices) > 0:
                                             sorted_indices = negative_weight_indices[np.argsort(weight[idx, negative_weight_indices])]
 
-                                            # Step 3: Select the top 10% most negative weights
-                                            num_weights_to_adjust = max(1, int(k/100 * len(sorted_indices)))  # Adjust the percentage as needed
+                                            # select the top 10% most negative weights
+                                            num_weights_to_adjust = max(1, int(k/100 * len(sorted_indices)))
                                             most_negative_indices = sorted_indices[:num_weights_to_adjust]
                                         else:
-                                            # If no negative weights are found, ensure an empty pruning action
+                                            #if no negative weights are found, ensure an empty pruning action
                                             most_negative_indices = []
                                             num_weights_to_adjust = 0
 
-                                    # Apply the reinitialization strategy
+                                    #apply the reinitialization strategy
                                     if reinit == "zero":
                                         weight[idx, most_negative_indices] = 0
                                     elif reinit == "normal":
-                                        # Reinitialize weights from normal distribution around 0 with current  variance
                                         weight[idx, most_negative_indices] = np.random.normal(0, std, size=num_weights_to_adjust)
                                     elif reinit == "he":
-                                        # Reinitialize weights using He Initialization
                                         weight[idx, most_negative_indices] = np.random.normal(0,np.sqrt(2 / num_inputs),size=num_weights_to_adjust)
                                     else:
                                         print("Undefined reinit strategy.")
